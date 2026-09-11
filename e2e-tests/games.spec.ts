@@ -86,6 +86,27 @@ test.describe('Game Listing and Navigation', () => {
     });
   });
 
+  test('should paginate the game list with accessible controls', async ({ page }) => {
+    await test.step('Navigate to homepage and verify the first page', async () => {
+      await page.goto('/');
+      await expect(page.getByTestId('pagination')).toBeVisible();
+      await expect(page.getByTestId('page-status')).toHaveText(/Page 1 of/);
+      await expect(page.getByTestId('previous-page')).toBeDisabled();
+      await expect(page.getByTestId('next-page')).toBeEnabled();
+    });
+
+    await test.step('Move to the next page', async () => {
+      const firstPageTitles = await page.locator('[data-testid="game-card"]:not([hidden]) [data-testid="game-title"]').allTextContents();
+      await page.getByTestId('next-page').click();
+      await expect(page.getByTestId('page-status')).toHaveText(/Page 2 of/);
+      const secondPageTitles = await page.locator('[data-testid="game-card"]:not([hidden]) [data-testid="game-title"]').allTextContents();
+
+      expect(secondPageTitles.length).toBeGreaterThan(0);
+      expect(secondPageTitles).not.toEqual(firstPageTitles);
+      await expect(page.getByTestId('previous-page')).toBeEnabled();
+    });
+  });
+
   test('should display game details with all required information', async ({ page }) => {
     await test.step('Navigate to specific game details page', async () => {
       await page.goto('/game/1');
