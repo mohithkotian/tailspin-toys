@@ -27,6 +27,10 @@ export default [
         "error",
         { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
       ],
+      "@typescript-eslint/consistent-type-imports": [
+        "error",
+        { prefer: "type-imports", fixStyle: "separate-type-imports" },
+      ],
     },
   },
 
@@ -38,6 +42,16 @@ export default [
     files: ["**/*.ts"],
     languageOptions: {
       parser: tseslint.parser,
+    },
+  },
+
+  // Data-layer functions must expose their types for callers and tests.
+  {
+    files: ["db/**/*.ts", "src/lib/**/*.ts"],
+    rules: {
+      "@typescript-eslint/explicit-module-boundary-types": [
+        "error",
+      ],
     },
   },
 ];
