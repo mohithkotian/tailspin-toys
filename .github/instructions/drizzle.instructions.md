@@ -7,6 +7,19 @@ applyTo: 'db/**/*.ts,src/lib/*.ts'
 
 The app's data lives in a local SQLite database accessed through **Drizzle ORM** over Node.js's built-in `node:sqlite` driver. It is consumed at **build time** from Astro page frontmatter — there is no runtime API server. Schema changes are managed with **drizzle-kit** migrations.
 
+## Documentation Requirements
+
+- Add TSDoc/JSDoc to every exported function in `db/` and `src/lib/`.
+- Each function comment must state its purpose, document every parameter and
+  the return value, and note important side effects or errors.
+- Explicitly document injectable `db` parameters so callers understand that
+  pages use the application database while tests use an in-memory database.
+- Comments must explain intent or a non-obvious data decision, never restate
+  the implementation. Update or remove stale comments whenever related code
+  changes.
+- Follow the shared [coding standards](coding-standards.instructions.md) for
+  TypeScript formatting and comment style.
+
 ## Layout
 
 - `db/schema.ts` — Drizzle table definitions (`publishers`, `categories`, `games`) and inferred row types. The single source of truth for the schema.
