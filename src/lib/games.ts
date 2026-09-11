@@ -77,6 +77,28 @@ export interface GameFilters {
     publisherIds?: number[] | null;
 }
 
+/** Options for selecting one page from the ordered game catalog. */
+export interface GamePageOptions extends GameFilters {
+    /** One-based page number. Values below one are normalized to the first page. */
+    page?: number;
+    /** Number of games per page. Values below one are normalized to the default size. */
+    pageSize?: number;
+}
+
+/** A page of games together with the metadata needed to render page controls. */
+export interface GamePage {
+    /** Games in the requested page, ordered alphabetically by title. */
+    games: Game[];
+    /** One-based page number after normalization. */
+    page: number;
+    /** Number of games requested per page after normalization. */
+    pageSize: number;
+    /** Total number of games matching the filters. */
+    totalGames: number;
+    /** Number of pages required for the matching games. */
+    totalPages: number;
+}
+
 /**
  * Return all games in title order, optionally restricted to one or more category and/or publisher selections.
  *
@@ -98,8 +120,36 @@ export async function getAllGames(db: Database, filters: GameFilters = {}): Prom
     }
 
     const query = conditions.length > 0 ? baseGamesQuery(db).where(and(...conditions)) : baseGamesQuery(db);
-    const rows = await query.orderBy(asc(games.title));
+    const rows = await query.orderBy(asc(games.title), asc(games.id));
     return rows.map(mapGame);
+}
+
+/**
+ * Return one deterministic page of games, including pagination metadata.
+ *
+ * @param db Injected database connection used to read the catalog.
+ * @param options Optional filters and one-based page settings.
+ * @returns The selected games and metadata for accessible pagination controls.
+ */
+export async function getGamesPage(db: Database, options: GamePageOptions = {}): Promise<GamePage> {
+    const allGames = await getAllGames(db, options);
+    const pageSize = Number.isInteger(options.pageSize) && options.pageSize && options.pageSize > 0
+        ? options.pageSize
+        : 6;
+    const totalGames = allGames.length;
+    const totalPages = Math.max(1, Math.ceil(totalGames / pageSize));
+    const page = Number.isInteger(options.page) && options.page && options.page > 0
+        ? Math.min(options.page, totalPages)
+        : 1;
+    const start = (page - 1) * pageSize;
+
+    return {
+        games: allGames.slice(start, start + pageSize),
+        page,
+        pageSize,
+        totalGames,
+        totalPages,
+    };
 }
 
 /**
@@ -129,7 +179,7 @@ export async function getAllPublishers(db: Database): Promise<Array<{ id: number
  * @returns The ordered list of game IDs.
  */
 export async function getAllGameIds(db: Database): Promise<number[]> {
-    const rows = await db.select({ id: games.id }).from(games).orderBy(asc(games.title));
+    const rows = await db.select({ id: games.id }).from(games).orderBy(asc(games.title), asc(games.id));
     return rows.map((row) => row.id);
 }
 
